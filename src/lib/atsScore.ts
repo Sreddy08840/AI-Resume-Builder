@@ -21,11 +21,12 @@ function wordCount(text: string) {
     .filter(Boolean).length;
 }
 
-function skillsCount(skills: string) {
-  return skills
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean).length;
+function skillsCountAny(skills: ResumeData["skills"]) {
+  return (
+    (skills?.technical?.length ?? 0) +
+    (skills?.soft?.length ?? 0) +
+    (skills?.tools?.length ?? 0)
+  );
 }
 
 function hasNumberImpact(text: string) {
@@ -58,7 +59,7 @@ export function computeAtsScoreV1(data: ResumeData): AtsResult {
   const experienceOk = data.experience.length >= 1;
   if (experienceOk) score += 10;
 
-  const skillsOk = skillsCount(data.skills) >= 8;
+  const skillsOk = skillsCountAny(data.skills) >= 8;
   if (skillsOk) score += 10;
 
   const linksOk = Boolean(data.links.github.trim() || data.links.linkedin.trim());

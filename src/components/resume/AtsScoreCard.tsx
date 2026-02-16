@@ -9,10 +9,10 @@ export function AtsScoreCard({ data }: { data: ResumeData }) {
   if (!result.breakdown.numbers) improvements.push("Add measurable impact (numbers) in bullets.");
   const summaryWords = data.summary.trim().split(/\s+/).filter(Boolean).length;
   if (summaryWords > 0 && summaryWords < 40) improvements.push("Expand your summary to 40+ words.");
-  const skillsCount = data.skills
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean).length;
+  const skillsCount =
+    (data.skills.technical?.length ?? 0) +
+    (data.skills.soft?.length ?? 0) +
+    (data.skills.tools?.length ?? 0);
   if (skillsCount < 8) improvements.push("Add more skills (target 8+).");
   if (data.experience.length < 1) improvements.push("Add experience (internship, freelancing, or project work).");
   const top3Improvements = improvements.slice(0, 3);

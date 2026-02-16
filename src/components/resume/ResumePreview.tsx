@@ -8,17 +8,16 @@ export function ResumePreview({
   data: ResumeData;
   template?: ResumeTemplate;
 }) {
-  const skills = data.skills
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const techSkills = data.skills.technical ?? [];
+  const softSkills = data.skills.soft ?? [];
+  const toolSkills = data.skills.tools ?? [];
 
   const hasLinks = Boolean(data.links.github.trim() || data.links.linkedin.trim());
   const showSummary = Boolean(data.summary.trim());
   const showEducation = data.education.some((e) => e.school.trim() || e.degree.trim());
   const showExperience = data.experience.some((x) => x.company.trim() || x.role.trim() || x.highlights.trim());
-  const showProjects = data.projects.some((p) => p.name.trim() || p.description.trim());
-  const showSkills = skills.length > 0;
+  const showProjectsNew = data.projects.some((p) => p.title.trim() || p.description.trim());
+  const showSkills = techSkills.length + softSkills.length + toolSkills.length > 0;
 
   const wrapClass =
     template === "modern"
@@ -40,6 +39,22 @@ export function ResumePreview({
       : template === "minimal"
         ? "text-[11px] font-semibold uppercase tracking-wider text-black/60"
         : "text-xs font-semibold uppercase tracking-wider text-black/60";
+
+  function Pill({ text }: { text: string }) {
+    return (
+      <span className="inline-flex items-center rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-black/80">
+        {text}
+      </span>
+    );
+  }
+
+  function LinkIcon({ label }: { label: string }) {
+    return (
+      <span aria-hidden="true" className="text-xs text-black/60">
+        {label}
+      </span>
+    );
+  }
 
   return (
     <div className={`print-page ${wrapClass} overflow-hidden`}>
@@ -109,20 +124,54 @@ export function ResumePreview({
           </section>
         ) : null}
 
-        {showProjects ? (
+        {showProjectsNew ? (
           <section className="print-avoid-break">
             <div className={sectionHeaderClass}>Projects</div>
-            <div className="mt-2 space-y-3">
+            <div className="mt-3 space-y-3">
               {data.projects
-                .filter((p) => p.name.trim() || p.description.trim())
+                .filter((p) => p.title.trim() || p.description.trim())
                 .map((p, idx) => (
-                  <div key={idx} className="print-avoid-break text-sm">
-                    <div className="font-semibold">{p.name}</div>
+                  <div
+                    key={idx}
+                    className="print-avoid-break rounded-xl border border-black/10 bg-white p-4 text-sm"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="font-semibold">{p.title}</div>
+                      <div className="flex items-center gap-3 text-xs">
+                        {p.liveUrl.trim() ? (
+                          <a
+                            href={p.liveUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-black/70 hover:underline"
+                          >
+                            <LinkIcon label="Live" />
+                          </a>
+                        ) : null}
+                        {p.githubUrl.trim() ? (
+                          <a
+                            href={p.githubUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-black/70 hover:underline"
+                          >
+                            <LinkIcon label="GitHub" />
+                          </a>
+                        ) : null}
+                      </div>
+                    </div>
+
                     {p.description.trim() ? (
-                      <div className="text-black/80">{p.description}</div>
+                      <div className="mt-2 whitespace-pre-line text-black/80">{p.description}</div>
                     ) : null}
-                    {p.tech.trim() ? <div className="text-black/60">{p.tech}</div> : null}
-                    {p.link.trim() ? <div className="text-black/60">{p.link}</div> : null}
+
+                    {p.techStack?.length ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {p.techStack.map((t) => (
+                          <Pill key={t} text={t} />
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
             </div>
@@ -130,9 +179,40 @@ export function ResumePreview({
         ) : null}
 
         {showSkills ? (
-          <section>
+          <section className="print-avoid-break">
             <div className={sectionHeaderClass}>Skills</div>
-            <div className="mt-2 text-sm text-black/80">{skills.join(", ")}</div>
+            <div className="mt-3 space-y-3">
+              {techSkills.length ? (
+                <div>
+                  <div className="text-xs font-semibold text-black/60">Technical Skills</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {techSkills.map((s) => (
+                      <Pill key={s} text={s} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {softSkills.length ? (
+                <div>
+                  <div className="text-xs font-semibold text-black/60">Soft Skills</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {softSkills.map((s) => (
+                      <Pill key={s} text={s} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {toolSkills.length ? (
+                <div>
+                  <div className="text-xs font-semibold text-black/60">Tools & Technologies</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {toolSkills.map((s) => (
+                      <Pill key={s} text={s} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </section>
         ) : null}
 

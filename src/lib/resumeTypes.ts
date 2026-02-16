@@ -16,10 +16,17 @@ export type ExperienceEntry = {
 };
 
 export type ProjectEntry = {
-  name: string;
+  title: string;
   description: string;
-  tech: string;
-  link: string;
+  techStack: string[];
+  liveUrl: string;
+  githubUrl: string;
+};
+
+export type SkillsData = {
+  technical: string[];
+  soft: string[];
+  tools: string[];
 };
 
 export type ResumeData = {
@@ -33,7 +40,7 @@ export type ResumeData = {
   education: EducationEntry[];
   experience: ExperienceEntry[];
   projects: ProjectEntry[];
-  skills: string;
+  skills: SkillsData;
   links: {
     github: string;
     linkedin: string;
@@ -46,7 +53,7 @@ export const EMPTY_RESUME: ResumeData = {
   education: [],
   experience: [],
   projects: [],
-  skills: "",
+  skills: { technical: [], soft: [], tools: [] },
   links: { github: "", linkedin: "" },
 };
 
@@ -80,13 +87,18 @@ export const SAMPLE_RESUME: ResumeData = {
   ],
   projects: [
     {
-      name: "AI Resume Builder",
-      description: "A premium resume builder with live preview and clean layout.",
-      tech: "Next.js, TypeScript",
-      link: "",
+      title: "AI Resume Builder",
+      description: "Built a premium resume builder with live preview and clean layout.",
+      techStack: ["Next.js", "TypeScript"],
+      liveUrl: "",
+      githubUrl: "",
     },
   ],
-  skills: "React, TypeScript, Next.js, HTML, CSS",
+  skills: {
+    technical: ["React", "TypeScript", "Next.js"],
+    soft: ["Problem Solving"],
+    tools: ["Git"],
+  },
   links: {
     github: "https://github.com/your-handle",
     linkedin: "https://linkedin.com/in/your-handle",

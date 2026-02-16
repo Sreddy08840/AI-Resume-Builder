@@ -60,8 +60,10 @@ export function resumeToPlainText(data: ResumeData) {
   section(
     "Projects",
     data.projects.flatMap((p) => {
-      const head = [line(p.name), line(p.tech)].filter(Boolean).join(" — ");
-      const link = line(p.link);
+      const head = [line(p.title), p.techStack?.length ? p.techStack.join(", ") : ""]
+        .filter(Boolean)
+        .join(" — ");
+      const link = [line(p.liveUrl), line(p.githubUrl)].filter(Boolean).join(" | ");
       const bullets = (p.description ?? "")
         .split("\n")
         .map((b) => b.trim())
@@ -72,11 +74,18 @@ export function resumeToPlainText(data: ResumeData) {
     }),
   );
 
-  const skills = (data.skills ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  section("Skills", skills.length ? [skills.join(", ")] : []);
+  const tech = data.skills.technical ?? [];
+  const soft = data.skills.soft ?? [];
+  const tools = data.skills.tools ?? [];
+
+  section(
+    "Skills",
+    [
+      tech.length ? `Technical Skills: ${tech.join(", ")}` : "",
+      soft.length ? `Soft Skills: ${soft.join(", ")}` : "",
+      tools.length ? `Tools & Technologies: ${tools.join(", ")}` : "",
+    ].filter(Boolean),
+  );
 
   section("Links", links ? [links] : []);
 

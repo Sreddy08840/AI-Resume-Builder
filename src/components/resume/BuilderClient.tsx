@@ -1,7 +1,10 @@
 "use client";
+import { useState } from "react";
 import { useResume } from "@/components/resume/ResumeStore";
 import { AtsScoreCard } from "@/components/resume/AtsScoreCard";
 import { BulletGuidance } from "@/components/resume/BulletGuidance";
+import { AccordionSection } from "@/components/resume/Accordion";
+import { TagInput } from "@/components/resume/TagInput";
 import { TemplateTabs } from "@/components/resume/TemplateTabs";
 import { useResumeTemplate } from "@/components/resume/useResumeTemplate";
 import { ResumePreview } from "@/components/resume/ResumePreview";
@@ -58,6 +61,7 @@ function TextArea({
 export function BuilderClient() {
   const { data, setData, loadSample } = useResume();
   const { template, setTemplate } = useResumeTemplate();
+  const [suggestingSkills, setSuggestingSkills] = useState(false);
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-10">
@@ -288,9 +292,10 @@ export function BuilderClient() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-black/10 bg-white p-6">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold">Projects</div>
+          <AccordionSection
+            title="Projects"
+            defaultOpen
+            right={
               <button
                 type="button"
                 onClick={() =>
@@ -298,76 +303,201 @@ export function BuilderClient() {
                     ...data,
                     projects: [
                       ...data.projects,
-                      { name: "", description: "", tech: "", link: "" } satisfies ProjectEntry,
+                      {
+                        title: "",
+                        description: "",
+                        techStack: [],
+                        liveUrl: "",
+                        githubUrl: "",
+                      } satisfies ProjectEntry,
                     ],
                   })
                 }
                 className="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold hover:bg-black/5"
               >
-                Add
+                Add Project
               </button>
-            </div>
-            <div className="mt-4 space-y-6">
+            }
+          >
+            <div className="mt-4 space-y-4">
               {data.projects.map((p, idx) => (
-                <div key={idx} className="rounded-xl border border-black/10 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs font-semibold text-black/60">Entry {idx + 1}</div>
+                <details key={idx} className="rounded-xl border border-black/10 bg-white" open>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3">
+                    <div className="text-sm font-semibold">
+                      {p.title.trim() ? p.title : `Project ${idx + 1}`}
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setData({ ...data, projects: data.projects.filter((_, i) => i !== idx) })}
-                      className="text-xs font-semibold text-black/60 hover:text-black"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setData({ ...data, projects: data.projects.filter((_, i) => i !== idx) });
+                      }}
+                      className="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-black/70 hover:bg-black/5"
                     >
-                      Remove
+                      Delete
                     </button>
+                  </summary>
+
+                  <div className="px-4 pb-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <Field
+                        label="Project Title"
+                        value={p.title}
+                        onChange={(v) => {
+                          const next = [...data.projects];
+                          next[idx] = { ...p, title: v };
+                          setData({ ...data, projects: next });
+                        }}
+                      />
+
+                      <div>
+                        <label className="text-xs font-semibold text-black/60">Live URL (optional)</label>
+                        <input
+                          value={p.liveUrl}
+                          onChange={(e) => {
+                            const next = [...data.projects];
+                            next[idx] = { ...p, liveUrl: e.target.value };
+                            setData({ ...data, projects: next });
+                          }}
+                          placeholder="https://..."
+                          className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-black/60">GitHub URL (optional)</label>
+                        <input
+                          value={p.githubUrl}
+                          onChange={(e) => {
+                            const next = [...data.projects];
+                            next[idx] = { ...p, githubUrl: e.target.value };
+                            setData({ ...data, projects: next });
+                          }}
+                          placeholder="https://github.com/..."
+                          className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-black/60">Tech Stack</label>
+                        <div className="mt-2">
+                          <TagInput
+                            value={p.techStack}
+                            onChange={(nextTags) => {
+                              const next = [...data.projects];
+                              next[idx] = { ...p, techStack: nextTags };
+                              setData({ ...data, projects: next });
+                            }}
+                            placeholder="Type a tech and press Enter"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-black/60">Description (max 200)</label>
+                        <div className="text-xs font-semibold text-black/40">
+                          {p.description.length}/200
+                        </div>
+                      </div>
+                      <textarea
+                        value={p.description}
+                        onChange={(e) => {
+                          const v = e.target.value.slice(0, 200);
+                          const next = [...data.projects];
+                          next[idx] = { ...p, description: v };
+                          setData({ ...data, projects: next });
+                        }}
+                        className="mt-2 h-28 w-full resize-none rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                        placeholder="Use bullet lines. Press Enter for new bullet."
+                      />
+                      <BulletGuidance text={p.description} />
+                    </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <Field
-                      label="Name"
-                      value={p.name}
-                      onChange={(v) => {
-                        const next = [...data.projects];
-                        next[idx] = { ...p, name: v };
-                        setData({ ...data, projects: next });
-                      }}
-                    />
-                    <Field
-                      label="Tech"
-                      value={p.tech}
-                      onChange={(v) => {
-                        const next = [...data.projects];
-                        next[idx] = { ...p, tech: v };
-                        setData({ ...data, projects: next });
-                      }}
-                    />
-                  </div>
-                  <div className="mt-4">
-                    <TextArea
-                      label="Description"
-                      value={p.description}
-                      onChange={(v) => {
-                        const next = [...data.projects];
-                        next[idx] = { ...p, description: v };
-                        setData({ ...data, projects: next });
-                      }}
-                    />
-                    <BulletGuidance text={p.description} />
-                  </div>
-                </div>
+                </details>
               ))}
             </div>
-          </div>
+          </AccordionSection>
 
-          <div className="rounded-2xl border border-black/10 bg-white p-6">
-            <div className="text-sm font-semibold">Skills</div>
-            <div className="mt-4">
-              <Field
-                label="Comma-separated"
-                value={data.skills}
-                onChange={(v) => setData({ ...data, skills: v })}
-                placeholder="React, TypeScript, ..."
-              />
+          <AccordionSection
+            title={`Skills`}
+            defaultOpen
+            right={
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (suggestingSkills) return;
+                  setSuggestingSkills(true);
+                  await new Promise((r) => window.setTimeout(r, 1000));
+                  setData({
+                    ...data,
+                    skills: {
+                      technical: ["TypeScript", "React", "Node.js", "PostgreSQL", "GraphQL"],
+                      soft: ["Team Leadership", "Problem Solving"],
+                      tools: ["Git", "Docker", "AWS"],
+                    },
+                  });
+                  setSuggestingSkills(false);
+                }}
+                className="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold hover:bg-black/5"
+              >
+                {suggestingSkills ? "Loading..." : "✨ Suggest Skills"}
+              </button>
+            }
+          >
+            <div className="space-y-6">
+              <div>
+                <div className="text-sm font-semibold">Technical Skills ({data.skills.technical.length})</div>
+                <div className="mt-3">
+                  <TagInput
+                    value={data.skills.technical}
+                    onChange={(nextTags) =>
+                      setData({
+                        ...data,
+                        skills: { ...data.skills, technical: nextTags },
+                      })
+                    }
+                    placeholder="Type a skill and press Enter"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm font-semibold">Soft Skills ({data.skills.soft.length})</div>
+                <div className="mt-3">
+                  <TagInput
+                    value={data.skills.soft}
+                    onChange={(nextTags) =>
+                      setData({
+                        ...data,
+                        skills: { ...data.skills, soft: nextTags },
+                      })
+                    }
+                    placeholder="Type a skill and press Enter"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm font-semibold">Tools & Technologies ({data.skills.tools.length})</div>
+                <div className="mt-3">
+                  <TagInput
+                    value={data.skills.tools}
+                    onChange={(nextTags) =>
+                      setData({
+                        ...data,
+                        skills: { ...data.skills, tools: nextTags },
+                      })
+                    }
+                    placeholder="Type a tool and press Enter"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          </AccordionSection>
 
           <div className="rounded-2xl border border-black/10 bg-white p-6">
             <div className="text-sm font-semibold">Links</div>
