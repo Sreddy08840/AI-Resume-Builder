@@ -5,31 +5,28 @@ import Link from "next/link";
 import { RB_STEPS } from "@/lib/rbSteps";
 import {
   getRbArtifact,
+  getRbFinalSubmission,
   getRbStatus,
   getRbStorageVersion,
+  rbChecklistPassed,
+  rbHasAllProofLinks,
+  rbIsShipped,
+  rbIsValidHttpUrl,
+  setRbFinalSubmission,
   subscribeRbStorage,
 } from "@/lib/rbStorage";
 
-function safeGet(key: string) {
-  try {
-    return window.localStorage.getItem(key) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function safeSet(key: string, value: string) {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    return;
-  }
+function labelUrlError(v: string) {
+  if (!v.trim()) return "Required";
+  if (!rbIsValidHttpUrl(v)) return "Enter a valid URL (http/https)";
+  return "";
 }
 
 export function RbProofPage() {
-  const [lovableLink, setLovableLink] = useState(() => safeGet("rb_proof_lovable_link"));
-  const [githubLink, setGithubLink] = useState(() => safeGet("rb_proof_github_link"));
-  const [deployLink, setDeployLink] = useState(() => safeGet("rb_proof_deploy_link"));
+  const initial = useMemo(() => getRbFinalSubmission(), []);
+  const [lovableLink, setLovableLink] = useState(() => initial.lovableProject);
+  const [githubLink, setGithubLink] = useState(() => initial.githubRepository);
+  const [deployLink, setDeployLink] = useState(() => initial.liveDeployment);
 
   const storageVersion = useSyncExternalStore(
     subscribeRbStorage,
@@ -49,20 +46,31 @@ export function RbProofPage() {
     });
   }, [storageVersion]);
 
-  const allDone = steps.every((s) => s.done);
+  const allStepsDone = steps.every((s) => s.done);
+  const checklistPassed = rbChecklistPassed();
+  const proofLinksOk = rbHasAllProofLinks();
+  const shipped = rbIsShipped();
+
+  const lovableError = labelUrlError(lovableLink);
+  const githubError = labelUrlError(githubLink);
+  const deployError = labelUrlError(deployLink);
 
   const finalText = useMemo(() => {
     const lines: string[] = [];
-    lines.push("Project 3 — AI Resume Builder — Build Track");
+    lines.push("------------------------------------------");
+    lines.push("AI Resume Builder — Final Submission");
     lines.push("");
-    lines.push(`Lovable: ${lovableLink || "(add link)"}`);
-    lines.push(`GitHub: ${githubLink || "(add link)"}`);
-    lines.push(`Deploy: ${deployLink || "(add link)"}`);
+    lines.push(`Lovable Project: ${lovableLink || ""}`);
+    lines.push(`GitHub Repository: ${githubLink || ""}`);
+    lines.push(`Live Deployment: ${deployLink || ""}`);
     lines.push("");
-    lines.push("Step Status:");
-    for (const s of steps) {
-      lines.push(`- Step ${s.index}: ${s.done ? "DONE" : "PENDING"} (${s.status})`);
-    }
+    lines.push("Core Capabilities:");
+    lines.push("- Structured resume builder");
+    lines.push("- Deterministic ATS scoring");
+    lines.push("- Template switching");
+    lines.push("- PDF export with clean formatting");
+    lines.push("- Persistence + validation checklist");
+    lines.push("------------------------------------------");
     return lines.join("\n");
   }, [deployLink, githubLink, lovableLink, steps]);
 
@@ -78,19 +86,28 @@ export function RbProofPage() {
           <div className="text-sm font-semibold">Project 3 — Proof</div>
           <span
             className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-              allDone
+              shipped
                 ? "bg-emerald-600 text-white"
                 : "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
             }`}
           >
-            {allDone ? "Ready" : "In progress"}
+            {shipped ? "Shipped" : "In Progress"}
           </span>
         </div>
       </div>
 
       <div className="mx-auto w-full max-w-5xl px-6 py-10">
+        {shipped ? (
+          <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+            <div className="text-lg font-semibold">Project 3 Shipped Successfully.</div>
+            <div className="mt-2 text-sm opacity-90">
+              All steps, checklist tests, and submission links are complete.
+            </div>
+          </div>
+        ) : null}
+
         <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-          <div className="text-lg font-semibold">8 Step Status</div>
+          <div className="text-lg font-semibold">Step Completion Overview</div>
           <div className="mt-4 grid grid-cols-1 gap-3">
             {steps.map((s) => (
               <div
@@ -118,52 +135,103 @@ export function RbProofPage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+                allStepsDone
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200"
+                  : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+              }`}
+            >
+              {allStepsDone ? "All 8 steps completed" : "Steps incomplete"}
+            </div>
+            <div
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+                checklistPassed
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200"
+                  : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+              }`}
+            >
+              {checklistPassed ? "All 10 tests passed" : "Checklist incomplete"}
+            </div>
+            <div
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+                proofLinksOk
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200"
+                  : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+              }`}
+            >
+              {proofLinksOk ? "All proof links provided" : "Proof links missing"}
+            </div>
+          </div>
         </div>
 
         <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-          <div className="text-lg font-semibold">Links</div>
+          <div className="text-lg font-semibold">Artifact Collection (Required to mark Shipped)</div>
           <div className="mt-4 grid grid-cols-1 gap-4">
             <div>
               <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                Lovable link
+                Lovable Project Link
               </label>
               <input
                 value={lovableLink}
                 onChange={(e) => {
                   setLovableLink(e.target.value);
-                  safeSet("rb_proof_lovable_link", e.target.value);
+                  setRbFinalSubmission({
+                    lovableProject: e.target.value,
+                    githubRepository: githubLink,
+                    liveDeployment: deployLink,
+                  });
                 }}
                 className="mt-2 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:ring-zinc-100/10"
                 placeholder="https://..."
               />
+              {lovableError ? (
+                <div className="mt-2 text-xs font-semibold text-rose-600">{lovableError}</div>
+              ) : null}
             </div>
             <div>
               <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                GitHub link
+                GitHub Repository Link
               </label>
               <input
                 value={githubLink}
                 onChange={(e) => {
                   setGithubLink(e.target.value);
-                  safeSet("rb_proof_github_link", e.target.value);
+                  setRbFinalSubmission({
+                    lovableProject: lovableLink,
+                    githubRepository: e.target.value,
+                    liveDeployment: deployLink,
+                  });
                 }}
                 className="mt-2 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:ring-zinc-100/10"
                 placeholder="https://github.com/..."
               />
+              {githubError ? (
+                <div className="mt-2 text-xs font-semibold text-rose-600">{githubError}</div>
+              ) : null}
             </div>
             <div>
               <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                Deploy link
+                Deployed URL
               </label>
               <input
                 value={deployLink}
                 onChange={(e) => {
                   setDeployLink(e.target.value);
-                  safeSet("rb_proof_deploy_link", e.target.value);
+                  setRbFinalSubmission({
+                    lovableProject: lovableLink,
+                    githubRepository: githubLink,
+                    liveDeployment: e.target.value,
+                  });
                 }}
                 className="mt-2 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:ring-zinc-100/10"
                 placeholder="https://..."
               />
+              {deployError ? (
+                <div className="mt-2 text-xs font-semibold text-rose-600">{deployError}</div>
+              ) : null}
             </div>
           </div>
         </div>

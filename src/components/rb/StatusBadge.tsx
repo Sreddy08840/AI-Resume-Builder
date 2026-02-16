@@ -1,15 +1,27 @@
 import type { RbStepStatus } from "@/lib/rbStorage";
 
-export function StatusBadge({ status }: { status: RbStepStatus }) {
-  const styles =
-    status === "worked"
+export function StatusBadge({
+  status,
+  shipped,
+}: {
+  status: RbStepStatus;
+  shipped?: boolean;
+}) {
+  const styles = shipped
+    ? "bg-emerald-600 text-white"
+    : status === "worked"
       ? "bg-emerald-600 text-white"
       : status === "error"
         ? "bg-rose-600 text-white"
         : "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200";
 
-  const label =
-    status === "worked" ? "Worked" : status === "error" ? "Error" : "In progress";
+  const label = shipped
+    ? "Shipped"
+    : status === "worked"
+      ? "Worked"
+      : status === "error"
+        ? "Error"
+        : "In progress";
 
   return (
     <span

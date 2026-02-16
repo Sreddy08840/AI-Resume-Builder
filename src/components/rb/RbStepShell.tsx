@@ -8,6 +8,8 @@ import {
   getRbArtifact,
   getRbStatus,
   getRbStorageVersion,
+  rbChecklistPassed,
+  rbIsShipped,
   subscribeRbStorage,
 } from "@/lib/rbStorage";
 import { StatusBadge } from "@/components/rb/StatusBadge";
@@ -30,6 +32,7 @@ export function RbStepShell({
 
   const artifact = getRbArtifact(stepIndex) ?? "";
   const status = getRbStatus(stepIndex);
+  const shipped = rbIsShipped();
 
   const step = RB_STEPS.find((s) => s.index === stepIndex);
 
@@ -51,7 +54,9 @@ export function RbStepShell({
   const nextStep = RB_STEPS.find((s) => s.index === stepIndex + 1);
   const prevStep = RB_STEPS.find((s) => s.index === stepIndex - 1);
 
-  const canNext = artifact.trim().length > 0;
+  const canNext =
+    artifact.trim().length > 0 &&
+    (stepIndex === 7 ? rbChecklistPassed() : true);
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-50">
@@ -61,7 +66,7 @@ export function RbStepShell({
           <div className="text-sm font-semibold">
             Project 3 — Step {stepIndex} of 8
           </div>
-          <StatusBadge status={status} />
+          <StatusBadge status={status} shipped={shipped} />
         </div>
       </div>
 
