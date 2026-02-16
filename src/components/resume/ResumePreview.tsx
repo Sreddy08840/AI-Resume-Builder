@@ -42,7 +42,7 @@ export function ResumePreview({
         : "text-xs font-semibold uppercase tracking-wider text-black/60";
 
   return (
-    <div className={wrapClass}>
+    <div className={`print-page ${wrapClass} overflow-hidden`}>
       <div className="flex flex-col gap-1">
         <div className={nameClass}>
           {data.personal.name || "Your Name"}
@@ -66,7 +66,7 @@ export function ResumePreview({
         ) : null}
 
         {showEducation ? (
-          <section>
+          <section className="print-avoid-break">
             <div className={sectionHeaderClass}>Education</div>
             <div className="mt-2 space-y-3">
               {data.education
@@ -86,13 +86,13 @@ export function ResumePreview({
         ) : null}
 
         {showExperience ? (
-          <section>
+          <section className="print-avoid-break">
             <div className={sectionHeaderClass}>Experience</div>
             <div className="mt-2 space-y-4">
               {data.experience
                 .filter((x) => x.company.trim() || x.role.trim() || x.highlights.trim())
                 .map((x, idx) => (
-                  <div key={idx} className="text-sm">
+                  <div key={idx} className="print-avoid-break text-sm">
                     <div className="flex items-baseline justify-between gap-4">
                       <div className="font-semibold">{x.company}</div>
                       <div className="text-xs text-black/60">
@@ -110,13 +110,13 @@ export function ResumePreview({
         ) : null}
 
         {showProjects ? (
-          <section>
+          <section className="print-avoid-break">
             <div className={sectionHeaderClass}>Projects</div>
             <div className="mt-2 space-y-3">
               {data.projects
                 .filter((p) => p.name.trim() || p.description.trim())
                 .map((p, idx) => (
-                  <div key={idx} className="text-sm">
+                  <div key={idx} className="print-avoid-break text-sm">
                     <div className="font-semibold">{p.name}</div>
                     {p.description.trim() ? (
                       <div className="text-black/80">{p.description}</div>
