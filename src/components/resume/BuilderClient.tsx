@@ -5,8 +5,10 @@ import { AtsScoreCard } from "@/components/resume/AtsScoreCard";
 import { BulletGuidance } from "@/components/resume/BulletGuidance";
 import { AccordionSection } from "@/components/resume/Accordion";
 import { TagInput } from "@/components/resume/TagInput";
-import { TemplateTabs } from "@/components/resume/TemplateTabs";
+import { TemplateThumbnailPicker } from "@/components/resume/TemplateThumbnailPicker";
+import { ColorThemePicker } from "@/components/resume/ColorThemePicker";
 import { useResumeTemplate } from "@/components/resume/useResumeTemplate";
+import { useResumeAccent } from "@/components/resume/useResumeAccent";
 import { ResumePreview } from "@/components/resume/ResumePreview";
 import { type EducationEntry, type ExperienceEntry, type ProjectEntry } from "@/lib/resumeTypes";
 
@@ -61,6 +63,7 @@ function TextArea({
 export function BuilderClient() {
   const { data, setData, loadSample } = useResume();
   const { template, setTemplate } = useResumeTemplate();
+  const { accent, setAccent } = useResumeAccent();
   const [suggestingSkills, setSuggestingSkills] = useState(false);
 
   return (
@@ -72,16 +75,13 @@ export function BuilderClient() {
               <div className="text-2xl font-semibold tracking-tight">Builder</div>
               <div className="mt-1 text-sm text-black/60">Autosave + ATS scoring v1. No export/validation.</div>
             </div>
-            <div className="flex items-center gap-3">
-              <TemplateTabs value={template} onChange={setTemplate} />
-              <button
-                type="button"
-                onClick={loadSample}
-                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold hover:bg-black/5"
-              >
-                Load Sample Data
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={loadSample}
+              className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold hover:bg-black/5"
+            >
+              Load sample
+            </button>
           </div>
 
           <div className="rounded-2xl border border-black/10 bg-white p-6">
@@ -523,10 +523,27 @@ export function BuilderClient() {
           <div className="mb-6">
             <AtsScoreCard data={data} />
           </div>
+
+          <div className="mb-4 rounded-2xl border border-black/10 bg-white p-4">
+            <div className="text-xs font-semibold uppercase tracking-wider text-black/60">
+              Template
+            </div>
+            <div className="mt-3">
+              <TemplateThumbnailPicker value={template} onChange={setTemplate} />
+            </div>
+
+            <div className="mt-4 text-xs font-semibold uppercase tracking-wider text-black/60">
+              Accent Color
+            </div>
+            <div className="mt-3">
+              <ColorThemePicker value={accent} onChange={setAccent} />
+            </div>
+          </div>
+
           <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-black/60">
             Live Preview
           </div>
-          <ResumePreview data={data} template={template} />
+          <ResumePreview data={data} template={template} accent={accent} />
         </div>
       </div>
     </div>
