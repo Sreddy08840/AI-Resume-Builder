@@ -1,25 +1,26 @@
 import type { ResumeData } from "@/lib/resumeTypes";
 
-type AtsResult = {
+export type AtsResult = {
   score: number;
   suggestions: string[];
+  band: {
+    label: "Needs Work" | "Getting There" | "Strong Resume";
+    color: "red" | "amber" | "green";
+  };
   breakdown: {
-    summary: boolean;
-    projects: boolean;
-    experience: boolean;
+    name: boolean;
+    email: boolean;
+    phone: boolean;
+    summaryLong: boolean;
+    summaryVerbs: boolean;
+    experienceWithBullets: boolean;
+    education: boolean;
     skills: boolean;
-    links: boolean;
-    numbers: boolean;
-    educationComplete: boolean;
+    project: boolean;
+    linkedin: boolean;
+    github: boolean;
   };
 };
-
-function wordCount(text: string) {
-  return text
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean).length;
-}
 
 function skillsCountAny(skills: ResumeData["skills"]) {
   return (
@@ -29,74 +30,109 @@ function skillsCountAny(skills: ResumeData["skills"]) {
   );
 }
 
-function hasNumberImpact(text: string) {
-  const t = text ?? "";
-  return /\d/.test(t);
+function hasExperienceWithBullets(data: ResumeData) {
+  return data.experience.some((e) => {
+    const t = (e.highlights ?? "").trim();
+    if (!t) return false;
+    const lines = t
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return lines.length >= 1;
+  });
 }
 
-function educationHasCompleteFields(data: ResumeData) {
-  return data.education.some((e) =>
-    Boolean(
-      e.school.trim() &&
-        e.degree.trim() &&
-        e.start.trim() &&
-        e.end.trim() &&
-        e.location.trim(),
-    ),
-  );
+function summaryHasActionVerbs(summary: string) {
+  const s = (summary ?? "").toLowerCase();
+  const verbs = [
+    "built",
+    "led",
+    "designed",
+    "improved",
+    "developed",
+    "implemented",
+    "created",
+    "optimized",
+    "automated",
+    "launched",
+    "delivered",
+  ];
+  return verbs.some((v) => s.includes(v));
+}
+
+function bandForScore(score: number) {
+  if (score <= 40) return { label: "Needs Work" as const, color: "red" as const };
+  if (score <= 70) return { label: "Getting There" as const, color: "amber" as const };
+  return { label: "Strong Resume" as const, color: "green" as const };
 }
 
 export function computeAtsScoreV1(data: ResumeData): AtsResult {
   let score = 0;
 
-  const wc = wordCount(data.summary);
-  const summaryOk = wc >= 40 && wc <= 120;
-  if (summaryOk) score += 15;
+  const nameOk = Boolean(data.personal.name.trim());
+  if (nameOk) score += 10;
 
-  const projectsOk = data.projects.length >= 2;
-  if (projectsOk) score += 10;
+  const emailOk = Boolean(data.personal.email.trim());
+  if (emailOk) score += 10;
 
-  const experienceOk = data.experience.length >= 1;
-  if (experienceOk) score += 10;
+  const summaryLongOk = (data.summary ?? "").trim().length > 50;
+  if (summaryLongOk) score += 10;
 
-  const skillsOk = skillsCountAny(data.skills) >= 8;
+  const experienceWithBulletsOk = hasExperienceWithBullets(data);
+  if (experienceWithBulletsOk) score += 15;
+
+  const educationOk = data.education.length >= 1;
+  if (educationOk) score += 10;
+
+  const skillsOk = skillsCountAny(data.skills) >= 5;
   if (skillsOk) score += 10;
 
-  const linksOk = Boolean(data.links.github.trim() || data.links.linkedin.trim());
-  if (linksOk) score += 10;
+  const projectOk = data.projects.length >= 1;
+  if (projectOk) score += 10;
 
-  const combinedBullets = [
-    ...data.experience.map((x) => x.highlights ?? ""),
-    ...data.projects.map((p) => p.description ?? ""),
-  ].join("\n");
-  const numbersOk = hasNumberImpact(combinedBullets);
-  if (numbersOk) score += 15;
+  const phoneOk = Boolean(data.personal.phone.trim());
+  if (phoneOk) score += 5;
 
-  const educationCompleteOk = educationHasCompleteFields(data);
-  if (educationCompleteOk) score += 10;
+  const linkedinOk = Boolean(data.links.linkedin.trim());
+  if (linkedinOk) score += 5;
+
+  const githubOk = Boolean(data.links.github.trim());
+  if (githubOk) score += 5;
+
+  const summaryVerbsOk = summaryHasActionVerbs(data.summary ?? "");
+  if (summaryVerbsOk) score += 10;
 
   score = Math.min(100, score);
 
   const suggestions: string[] = [];
-  if (!projectsOk) suggestions.push("Add at least 2 projects.");
-  if (!experienceOk) suggestions.push("Add at least 1 experience entry.");
-  if (!skillsOk) suggestions.push("Add more skills (target 8+).");
-  if (!summaryOk) suggestions.push("Write a stronger summary (40–120 words).");
-  if (!linksOk) suggestions.push("Add your GitHub or LinkedIn link.");
-  if (!numbersOk) suggestions.push("Add measurable impact (numbers) in bullets.");
-  if (!educationCompleteOk) suggestions.push("Complete education fields (school, degree, dates, location).");
+  if (!nameOk) suggestions.push("Add your name (+10 points)");
+  if (!emailOk) suggestions.push("Add your email (+10 points)");
+  if (!summaryLongOk) suggestions.push("Add a professional summary (+10 points)");
+  if (!experienceWithBulletsOk) suggestions.push("Add experience with bullet highlights (+15 points)");
+  if (!educationOk) suggestions.push("Add education (+10 points)");
+  if (!skillsOk) suggestions.push("Add at least 5 skills (+10 points)");
+  if (!projectOk) suggestions.push("Add at least 1 project (+10 points)");
+  if (!phoneOk) suggestions.push("Add your phone number (+5 points)");
+  if (!linkedinOk) suggestions.push("Add your LinkedIn (+5 points)");
+  if (!githubOk) suggestions.push("Add your GitHub (+5 points)");
+  if (!summaryVerbsOk) suggestions.push("Use action verbs in summary (e.g., built, led, designed) (+10 points)");
 
   return {
     score,
-    suggestions: suggestions.slice(0, 3),
+    band: bandForScore(score),
+    suggestions,
     breakdown: {
-      summary: summaryOk,
-      projects: projectsOk,
-      experience: experienceOk,
+      name: nameOk,
+      email: emailOk,
+      phone: phoneOk,
+      summaryLong: summaryLongOk,
+      summaryVerbs: summaryVerbsOk,
+      experienceWithBullets: experienceWithBulletsOk,
+      education: educationOk,
       skills: skillsOk,
-      links: linksOk,
-      numbers: numbersOk,
-      educationComplete: educationCompleteOk,
+      project: projectOk,
+      linkedin: linkedinOk,
+      github: githubOk,
     },
   };
 }

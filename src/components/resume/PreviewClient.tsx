@@ -8,6 +8,8 @@ import { ResumePreview } from "@/components/resume/ResumePreview";
 import { resumeToPlainText } from "@/lib/resumeTextExport";
 import { TemplateThumbnailPicker } from "@/components/resume/TemplateThumbnailPicker";
 import { ColorThemePicker } from "@/components/resume/ColorThemePicker";
+import { computeAtsScoreV1 } from "@/lib/atsScore";
+import { AtsScoreCircle } from "@/components/resume/AtsScoreCircle";
 
 export function PreviewClient() {
   const { data } = useResume();
@@ -16,6 +18,8 @@ export function PreviewClient() {
 
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState(false);
+
+  const ats = useMemo(() => computeAtsScoreV1(data), [data]);
 
   const exportWarning = useMemo(() => {
     const missingName = !data.personal.name.trim();
@@ -42,6 +46,28 @@ export function PreviewClient() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="print-hide mb-6 rounded-2xl border border-black/10 bg-white p-4">
+        <AtsScoreCircle result={ats} />
+
+        {ats.suggestions.length ? (
+          <div className="mt-4">
+            <div className="text-xs font-semibold uppercase tracking-wider text-black/60">Improvements</div>
+            <div className="mt-2 space-y-2">
+              {ats.suggestions.map((s) => (
+                <div
+                  key={s}
+                  className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-black/80"
+                >
+                  {s}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 text-sm text-black/70">Strong resume. Keep polishing formatting and clarity.</div>
+        )}
       </div>
 
       <div className="print-hide mb-6 rounded-2xl border border-black/10 bg-white p-4">
